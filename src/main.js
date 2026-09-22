@@ -1,6 +1,8 @@
 import { vsSource, fsSource, createProgram, loadTexture } from './shaders.js';
 import { Tower, Enemy } from './entity.js';
 import { InputManager } from './input.js';
+import { RhythmManager } from './audio.js';
+import { getLevel } from './levels.js';
 
 let gl, program;
 let positionAttributeLocation, texcoordAttributeLocation;
@@ -11,9 +13,12 @@ let tower;
 let enemies = [];
 
 let lastTime = 0;
-let spawnTimer = 0;
 let score = 0;
 let isGameOver = false;
+let isGameStarted = false;
+
+let currentLevel = null;
+const rhythmManager = new RhythmManager();
 
 // Elementos da HUD
 const hpElement = document.getElementById("hp-val");
@@ -21,6 +26,8 @@ const scoreElement = document.getElementById("score-val");
 const gameOverScreen = document.getElementById("game-over");
 const finalScoreElement = document.getElementById("final-score");
 const restartBtn = document.getElementById("restart-btn");
+const menuScreen = document.getElementById("menu-screen");
+const level1Btn = document.getElementById("level1-btn");
 
 function resizeCanvas() {
     if (!canvas || !gl) return;
@@ -89,17 +96,49 @@ function init() {
     window.addEventListener("resize", resizeCanvas);
 
     new InputManager(canvas, handleMouseClick);
-    restartBtn.addEventListener("click", resetGame);
+    restartBtn.addEventListener("click", restartLevel);
+    level1Btn.addEventListener("click", () => startLevel(1));
+    // Níveis 2 a 4 ainda não fazem nada (bloqueados por enquanto)
+
+    // A cada batida da música, spawna um novo inimigo
+    rhythmManager.onBeat(() => {
+        if (isGameStarted && !isGameOver) spawnEnemy();
+    });
 
     resetGame();
     requestAnimationFrame(gameLoop);
 }
 
+function startLevel(levelNumber) {
+    currentLevel = getLevel(levelNumber);
+    if (!currentLevel) return;
+
+    resetGame();
+    isGameStarted = true;
+    menuScreen.style.display = "none";
+
+    rhythmManager.setBpm(currentLevel.bpm);
+    rhythmManager.loadTrack(currentLevel.musicUrl);
+    rhythmManager.play();
+}
+
+// Reinicia o nível em andamento (usado pelo botão "Jogar Novamente")
+function restartLevel() {
+    if (currentLevel) {
+        startLevel(currentLevel.id);
+    } else {
+        resetGame();
+    }
+}
+
 function resetGame() {
     tower = new Tower(canvas.width / 2, canvas.height / 2);
+    if (currentLevel) {
+        tower.hp = currentLevel.towerHp;
+        tower.maxHp = currentLevel.towerHp;
+    }
     enemies = [];
     score = 0;
-    spawnTimer = 0;
     isGameOver = false;
 
     gameOverScreen.style.display = "none";
@@ -113,6 +152,7 @@ function updateHUD() {
 
 function triggerGameOver() {
     isGameOver = true;
+    rhythmManager.stop();
     finalScoreElement.textContent = score;
     gameOverScreen.style.display = "flex";
 }
@@ -152,13 +192,9 @@ function spawnEnemy() {
 }
 
 function update(deltaTime) {
-    if (isGameOver) return;
+    if (isGameOver || !isGameStarted) return;
 
-    spawnTimer += deltaTime;
-    if (spawnTimer >= 1.5) { // Novo inimigo a cada 1.5s
-        spawnEnemy();
-        spawnTimer = 0;
-    }
+    rhythmManager.update(deltaTime); // dispara spawnEnemy() de acordo com BPM
 
     enemies.forEach(enemy => {
         enemy.update(deltaTime, tower.x, tower.y);

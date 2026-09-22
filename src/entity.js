@@ -23,7 +23,7 @@ export class Tower extends Entity {
 export class Enemy extends Entity {
     constructor(x, y, type = "square") {
         super(x, y, 30, 30, [1.0, 0.2, 0.4, 1.0]); // Codigo cor rosa
-        this.hp = 2;
+        this.hp = 1;
         this.speed = 200; // Velocidade inimigo (pixels por segundo)
         this.type = type;
     }
