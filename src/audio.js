@@ -5,6 +5,8 @@
 // gerado pelo Editor de Beatmap (marcando na mão os tempos em que cada
 // instrumento entra na música).
 
+import { registerAudio, unregisterAudio } from './audio-settings.js';
+
 export class RhythmManager {
     constructor() {
         this.audio = null;
@@ -17,10 +19,12 @@ export class RhythmManager {
     loadTrack(url) {
         if (this.audio) {
             this.audio.pause();
+            unregisterAudio(this.audio);
         }
         this.audio = url ? new Audio(url) : null;
 
         if (this.audio) {
+            registerAudio(this.audio); // sincroniza com o volume global do site
             this.audio.addEventListener("error", () => {
                 console.error(
                     `[audio.js] Não foi possível carregar "${url}". ` +

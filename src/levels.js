@@ -1,4 +1,4 @@
-// Configuração central de cada nível: música, BPM e dificuldade.
+// Configuração central de cada nível: música, beatmap e dificuldade.
 
 import { nivel1Beatmap } from './beatmaps/nivel1.js';
 

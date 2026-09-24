@@ -54,7 +54,7 @@
             align-items: center;
         }
         #game-over h1 { color: #ff3333; margin-bottom: 10px; font-size: 48px; }
-        #restart-btn {
+        #restart-btn, #menu-btn {
             padding: 12px 24px;
             font-size: 18px;
             cursor: pointer;
@@ -64,7 +64,7 @@
             border-radius: 5px;
             margin-top: 20px;
         }
-        #restart-btn:hover { background-color: #00aaff; }
+        #restart-btn:hover, #menu-btn:hover { background-color: #00aaff; }
 
         #menu-screen {
             position: absolute;
@@ -148,7 +148,7 @@
             z-index: 5;
         }
         #pause-screen h1 { font-size: 42px; margin-bottom: 20px; letter-spacing: 2px; }
-        #resume-btn {
+        #resume-btn, #pause-menu-btn {
             padding: 12px 24px;
             font-size: 18px;
             cursor: pointer;
@@ -157,7 +157,47 @@
             border: none;
             border-radius: 5px;
         }
-        #resume-btn:hover { background-color: #00e676; }
+        #resume-btn:hover, #pause-menu-btn:hover { background-color: #00e676; }
+        #pause-menu-btn { margin-top: 16px; }
+
+        /* Botão de volume (reaproveitado na tela inicial e na de pause) */
+        .volume-control {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+        }
+        .volume-btn {
+            width: 48px;
+            height: 48px;
+            font-size: 22px;
+            cursor: pointer;
+            background-color: rgba(255,255,255,0.15);
+            color: white;
+            border: 2px solid white;
+            border-radius: 50%;
+        }
+        .volume-btn:hover { background-color: rgba(255,255,255,0.3); }
+        .volume-panel {
+            position: absolute;
+            top: 58px;
+            right: 0;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: rgba(0,0,0,0.55);
+            border-radius: 10px;
+            white-space: nowrap;
+        }
+        .volume-panel.open { display: flex; }
+        .volume-slider { width: 140px; cursor: pointer; }
+
+        /* Botões da tela de Game Over */
+        #game-over-buttons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
     </style>
 </head>
 <body>
@@ -165,8 +205,15 @@
     <div id="game-container">
         <canvas id="glcanvas"></canvas>
 
-        /* Tela inicial: título e seleção de nível */
+        <!-- Tela inicial: título e seleção de nível -->
         <div id="menu-screen">
+            <div class="volume-control">
+                <button class="volume-btn" aria-label="Ajustar volume" title="Ajustar volume">🔊</button>
+                <div class="volume-panel">
+                    <input type="range" class="volume-slider" min="0" max="100" value="100" step="1" aria-label="Volume">
+                </div>
+            </div>
+
             <div id="menu-title">TOWER DEFENSE</div>
             <div id="level-grid">
                 <button id="level1-btn" class="level-btn">NIVEL 1</button>
@@ -176,25 +223,36 @@
             </div>
         </div>
 
-        /* Vida da torre e pontuação */
+        <!-- Vida da torre e pontuação -->
         <div id="hud">
             <div>Vida da Torre: <span id="hp-val" style="color: #00ff88;">100</span> HP</div>
             <div>Pontuação: <span id="score-val" style="color: #ffcc00;">0</span></div>
             <button id="pause-btn">⏸ Pause</button>
         </div>
 
-        /* Tela de pausado */
+        <!-- Tela de pausado -->
         <div id="pause-screen">
+            <div class="volume-control">
+                <button class="volume-btn" aria-label="Ajustar volume" title="Ajustar volume">🔊</button>
+                <div class="volume-panel">
+                    <input type="range" class="volume-slider" min="0" max="100" value="100" step="1" aria-label="Volume">
+                </div>
+            </div>
+
             <h1>PAUSADO</h1>
             <button id="resume-btn">Continuar</button>
+            <button id="pause-menu-btn">Voltar ao Menu Principal</button>
         </div>
 
-        /* Mensagem de Game Over */
+        <!-- Mensagem de Game Over -->
         <div id="game-over">
             <h1>GAME OVER</h1>
             <p>A sua torre foi destruída!</p>
             <p>Pontuação Final: <span id="final-score">0</span></p>
-            <button id="restart-btn">Jogar Novamente</button>
+            <div id="game-over-buttons">
+                <button id="restart-btn">Jogar Novamente</button>
+                <button id="menu-btn">Voltar ao Menu Principal</button>
+            </div>
         </div>
     </div>
 

@@ -36,7 +36,7 @@ export class Enemy extends Entity {
     constructor(x, y, instrument = 1) {
         const style = ENEMY_STYLES[instrument] || ENEMY_STYLES[1];
         super(x, y, 30, 30, style.color);
-        this.hp = 2;
+        this.hp = 1;
         this.speed = style.speed;
         this.instrument = instrument;
         this.shape = style.shape;

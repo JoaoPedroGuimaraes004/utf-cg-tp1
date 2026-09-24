@@ -6,11 +6,22 @@ in vec2 a_texcoord;
 uniform vec2 u_resolution;
 uniform vec2 u_translation;
 uniform vec2 u_scale;
+uniform float u_rotation;
+uniform vec2 u_pivot;
 
 out vec2 v_texcoord;
 
 void main() {
-    vec2 position = (a_position * u_scale) + u_translation;
+    // Escala e rotaciona em torno de u_pivot (em coordenadas do quadrado
+    // unitário, antes da escala), depois translada. Com rotação 0 e
+    // pivot (0,0) isso é idêntico ao comportamento original (retângulos
+    // alinhados aos eixos, como a torre e os inimigos).
+    vec2 local = (a_position - u_pivot) * u_scale;
+    float c = cos(u_rotation);
+    float s = sin(u_rotation);
+    vec2 rotated = vec2(local.x * c - local.y * s, local.x * s + local.y * c);
+    vec2 position = rotated + u_translation;
+
     vec2 zeroToOne = position / u_resolution;
     vec2 zeroToTwo = zeroToOne * 2.0;
     vec2 clipSpace = zeroToTwo - 1.0;
