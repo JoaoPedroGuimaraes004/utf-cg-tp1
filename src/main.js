@@ -11,11 +11,13 @@ let resolutionUniformLocation, translationUniformLocation, scaleUniformLocation,
 let canvas;
 let tower;
 let enemies = [];
+let shapeBuffers = {}; // 'square' | 'triangle' | 'diamond' | 'circle' -> { position, texcoord, count }
 
 let lastTime = 0;
 let score = 0;
 let isGameOver = false;
 let isGameStarted = false;
+let isPaused = false;
 
 let currentLevel = null;
 const rhythmManager = new RhythmManager();
@@ -28,6 +30,43 @@ const finalScoreElement = document.getElementById("final-score");
 const restartBtn = document.getElementById("restart-btn");
 const menuScreen = document.getElementById("menu-screen");
 const level1Btn = document.getElementById("level1-btn");
+const pauseBtn = document.getElementById("pause-btn");
+const pauseScreen = document.getElementById("pause-screen");
+const resumeBtn = document.getElementById("resume-btn");
+
+// Cria os buffers de posição/texcoord para uma forma geométrica, a
+// partir de uma lista plana de vértices [x0,y0, x1,y1, ...] dentro do
+// quadrado unitário. O texcoord não é usado (inimigos não têm textura),
+// mas o shader espera o atributo preenchido, então reaproveitamos os
+// mesmos valores de posição.
+function createShapeBuffers(gl, vertices) {
+    const data = new Float32Array(vertices);
+
+    const positionBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+
+    const texcoordBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, texcoordBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+
+    return { position: positionBuffer, texcoord: texcoordBuffer, count: vertices.length / 2 };
+}
+
+// Gera os triângulos (em leque) que aproximam um círculo dentro do
+// quadrado unitário, centrado em (0.5, 0.5) com raio 0.5.
+function generateCircleVertices(segments = 20) {
+    const verts = [];
+    const cx = 0.5, cy = 0.5, r = 0.5;
+    for (let i = 0; i < segments; i++) {
+        const a0 = (i / segments) * Math.PI * 2;
+        const a1 = ((i + 1) / segments) * Math.PI * 2;
+        verts.push(cx, cy);
+        verts.push(cx + Math.cos(a0) * r, cy + Math.sin(a0) * r);
+        verts.push(cx + Math.cos(a1) * r, cy + Math.sin(a1) * r);
+    }
+    return verts;
+}
 
 function resizeCanvas() {
     if (!canvas || !gl) return;
@@ -91,6 +130,19 @@ function init() {
     gl.enableVertexAttribArray(texcoordAttributeLocation);
     gl.vertexAttribPointer(texcoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
 
+    // Formas geométricas dos inimigos: cada uma é um conjunto de
+    // triângulos dentro do quadrado unitário [0,1]x[0,1], igual ao
+    // buffer padrão acima, só que com vértices diferentes.
+    shapeBuffers.square = { position: positionBuffer, texcoord: texcoordBuffer, count: 6 };
+    shapeBuffers.triangle = createShapeBuffers(gl, [
+        0.5, 0,  0, 1,  1, 1,
+    ]);
+    shapeBuffers.diamond = createShapeBuffers(gl, [
+        0.5, 0,  1, 0.5,  0.5, 1,
+        0.5, 0,  0.5, 1,  0, 0.5,
+    ]);
+    shapeBuffers.circle = createShapeBuffers(gl, generateCircleVertices(20));
+
     // Redimensiona o canvas para a tela toda
     resizeCanvas();
     window.addEventListener("resize", resizeCanvas);
@@ -100,9 +152,17 @@ function init() {
     level1Btn.addEventListener("click", () => startLevel(1));
     // Níveis 2 a 4 ainda não fazem nada (bloqueados por enquanto)
 
-    // A cada batida da música, spawna um novo inimigo
-    rhythmManager.onBeat(() => {
-        if (isGameStarted && !isGameOver) spawnEnemy();
+    pauseBtn.addEventListener("click", pauseGame);
+    resumeBtn.addEventListener("click", resumeGame);
+
+    // Pausa automaticamente ao minimizar a janela ou trocar de aba
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) pauseGame();
+    });
+
+    // A cada instante marcado no beatmap, spawna o inimigo daquele instrumento
+    rhythmManager.onInstrumentPlay((instrument) => {
+        if (isGameStarted && !isGameOver) spawnEnemy(instrument);
     });
 
     resetGame();
@@ -117,8 +177,8 @@ function startLevel(levelNumber) {
     isGameStarted = true;
     menuScreen.style.display = "none";
 
-    rhythmManager.setBpm(currentLevel.bpm);
     rhythmManager.loadTrack(currentLevel.musicUrl);
+    rhythmManager.loadBeatmap(currentLevel.beatmap);
     rhythmManager.play();
 }
 
@@ -131,6 +191,20 @@ function restartLevel() {
     }
 }
 
+function pauseGame() {
+    if (!isGameStarted || isGameOver || isPaused) return;
+    isPaused = true;
+    rhythmManager.pause();
+    pauseScreen.style.display = "flex";
+}
+
+function resumeGame() {
+    if (!isPaused) return;
+    isPaused = false;
+    rhythmManager.resume();
+    pauseScreen.style.display = "none";
+}
+
 function resetGame() {
     tower = new Tower(canvas.width / 2, canvas.height / 2);
     if (currentLevel) {
@@ -140,8 +214,10 @@ function resetGame() {
     enemies = [];
     score = 0;
     isGameOver = false;
+    isPaused = false;
 
     gameOverScreen.style.display = "none";
+    pauseScreen.style.display = "none";
     updateHUD();
 }
 
@@ -179,7 +255,7 @@ function handleMouseClick(mouseX, mouseY) {
     });
 }
 
-function spawnEnemy() {
+function spawnEnemy(instrument = 1) {
     const side = Math.floor(Math.random() * 4);
     let x, y;
 
@@ -188,13 +264,13 @@ function spawnEnemy() {
     else if (side === 2) { x = Math.random() * canvas.width; y = canvas.height + 30; }  // Baixo
     else { x = -30; y = Math.random() * canvas.height; }                                // Esquerda
 
-    enemies.push(new Enemy(x, y));
+    enemies.push(new Enemy(x, y, instrument));
 }
 
 function update(deltaTime) {
-    if (isGameOver || !isGameStarted) return;
+    if (isGameOver || !isGameStarted || isPaused) return;
 
-    rhythmManager.update(deltaTime); // dispara spawnEnemy() de acordo com BPM
+    rhythmManager.update(); // dispara spawnEnemy() nos tempos do beatmap
 
     enemies.forEach(enemy => {
         enemy.update(deltaTime, tower.x, tower.y);
@@ -214,7 +290,15 @@ function update(deltaTime) {
     enemies = enemies.filter(e => e.active);
 }
 
-function drawRect(x, y, width, height, color, texture = null) {
+function drawRect(x, y, width, height, color, shape = "square", texture = null) {
+    const buffers = shapeBuffers[shape] || shapeBuffers.square;
+
+    // Troca o buffer de posição/texcoord ativo para o da forma pedida
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
+    gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.texcoord);
+    gl.vertexAttribPointer(texcoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+
     gl.uniform2f(translationUniformLocation, x - width / 2, y - height / 2);
     gl.uniform2f(scaleUniformLocation, width, height);
 
@@ -226,7 +310,7 @@ function drawRect(x, y, width, height, color, texture = null) {
         gl.uniform4fv(colorUniformLocation, color);
     }
 
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    gl.drawArrays(gl.TRIANGLES, 0, buffers.count);
 }
 
 function gameLoop(timestamp) {
@@ -240,10 +324,10 @@ function gameLoop(timestamp) {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     if (tower.hp > 0) {
-        drawRect(tower.x, tower.y, tower.width, tower.height, tower.color);
+        drawRect(tower.x, tower.y, tower.width, tower.height, tower.color, "square");
     }
 
-    enemies.forEach(e => drawRect(e.x, e.y, e.width, e.height, e.color));
+    enemies.forEach(e => drawRect(e.x, e.y, e.width, e.height, e.color, e.shape));
 
     requestAnimationFrame(gameLoop);
 }

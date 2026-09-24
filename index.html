@@ -121,6 +121,43 @@
         }
         .level-btn.locked:hover { filter: none; }
         .level-btn.locked:active { transform: none; border-bottom-width: 6px; }
+
+        #pause-btn {
+            pointer-events: auto;
+            padding: 6px 14px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: rgba(255,255,255,0.15);
+            color: white;
+            border: 2px solid white;
+            border-radius: 5px;
+        }
+        #pause-btn:hover { background-color: rgba(255,255,255,0.3); }
+
+        #pause-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+        }
+        #pause-screen h1 { font-size: 42px; margin-bottom: 20px; letter-spacing: 2px; }
+        #resume-btn {
+            padding: 12px 24px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #00cc66;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        #resume-btn:hover { background-color: #00e676; }
     </style>
 </head>
 <body>
@@ -143,6 +180,13 @@
         <div id="hud">
             <div>Vida da Torre: <span id="hp-val" style="color: #00ff88;">100</span> HP</div>
             <div>Pontuação: <span id="score-val" style="color: #ffcc00;">0</span></div>
+            <button id="pause-btn">⏸ Pause</button>
+        </div>
+
+        /* Tela de pausado */
+        <div id="pause-screen">
+            <h1>PAUSADO</h1>
+            <button id="resume-btn">Continuar</button>
         </div>
 
         /* Mensagem de Game Over */

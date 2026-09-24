@@ -1,4 +1,5 @@
 // Classe base para todas as entidades do jogo
+
 class Entity {
     constructor(x, y, width, height, color) {
         this.x = x;
@@ -19,13 +20,26 @@ export class Tower extends Entity {
     }
 }
 
+// Estilo visual, velocidade e forma de cada inimigo, por instrumento.
+// Ajustar quando os detalhes de cada inimigo forem definidos
+// (animação, dano, etc). As formas disponíveis são: 'triangle',
+// 'diamond', 'circle' e 'square' (ver shapeBuffers em main.js).
+const ENEMY_STYLES = {
+    1: { color: [1.0, 0.2, 0.4, 1.0], speed: 200, shape: "triangle" }, // Instrumento 1
+    2: { color: [1.0, 0.8, 0.0, 1.0], speed: 160, shape: "diamond" },  // Instrumento 2
+    3: { color: [0.3, 0.8, 1.0, 1.0], speed: 240, shape: "circle" },   // Instrumento 3
+    4: { color: [0.7, 0.3, 1.0, 1.0], speed: 180, shape: "square" },   // Instrumento 4
+};
+
 // Inimigos
 export class Enemy extends Entity {
-    constructor(x, y, type = "square") {
-        super(x, y, 30, 30, [1.0, 0.2, 0.4, 1.0]); // Codigo cor rosa
-        this.hp = 1;
-        this.speed = 200; // Velocidade inimigo (pixels por segundo)
-        this.type = type;
+    constructor(x, y, instrument = 1) {
+        const style = ENEMY_STYLES[instrument] || ENEMY_STYLES[1];
+        super(x, y, 30, 30, style.color);
+        this.hp = 2;
+        this.speed = style.speed;
+        this.instrument = instrument;
+        this.shape = style.shape;
     }
 
     update(deltaTime, targetX, targetY) {
@@ -41,4 +55,3 @@ export class Enemy extends Entity {
         }
     }
 }
-
