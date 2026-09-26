@@ -21,10 +21,10 @@ export class Tower extends Entity {
 
 // Estilo (cor e velocidade) de cada inimigo, por instrumento. 
 const ENEMY_STYLES = {
-    1: { color: [1.0, 0.45, 0.55, 1.0], speed: 30 },  // Instrumento 1
-    2: { color: [1.0, 0.75, 0.15, 1.0], speed: 80 }, // Instrumento 2
-    3: { color: [0.35, 0.75, 1.0, 1.0], speed: 30 },  // Instrumento 3
-    4: { color: [0.75, 0.4, 1.0, 1.0], speed: 110 },  // Instrumento 4
+    1: { color: [1.0, 0.45, 0.55, 1.0], speed: 25 },  // Instrumento 1
+    2: { color: [1.0, 0.75, 0.15, 1.0], speed: 60 }, // Instrumento 2
+    3: { color: [0.35, 0.75, 1.0, 1.0], speed: 25 },  // Instrumento 3
+    4: { color: [0.75, 0.4, 1.0, 1.0], speed: 60 },  // Instrumento 4
 };
 
 // Inimigos
