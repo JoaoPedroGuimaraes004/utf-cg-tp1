@@ -1,5 +1,4 @@
 // Classe base para todas as entidades do jogo
-
 class Entity {
     constructor(x, y, width, height, color) {
         this.x = x;
@@ -20,15 +19,12 @@ export class Tower extends Entity {
     }
 }
 
-// Estilo visual, velocidade e forma de cada inimigo, por instrumento.
-// Ajustar quando os detalhes de cada inimigo forem definidos
-// (animação, dano, etc). As formas disponíveis são: 'triangle',
-// 'diamond', 'circle' e 'square' (ver shapeBuffers em main.js).
+// Estilo (cor e velocidade) de cada inimigo, por instrumento. 
 const ENEMY_STYLES = {
-    1: { color: [1.0, 0.2, 0.4, 1.0], speed: 200, shape: "triangle" }, // Instrumento 1
-    2: { color: [1.0, 0.8, 0.0, 1.0], speed: 160, shape: "diamond" },  // Instrumento 2
-    3: { color: [0.3, 0.8, 1.0, 1.0], speed: 240, shape: "circle" },   // Instrumento 3
-    4: { color: [0.7, 0.3, 1.0, 1.0], speed: 180, shape: "square" },   // Instrumento 4
+    1: { color: [1.0, 0.45, 0.55, 1.0], speed: 30 },  // Instrumento 1
+    2: { color: [1.0, 0.75, 0.15, 1.0], speed: 80 }, // Instrumento 2
+    3: { color: [0.35, 0.75, 1.0, 1.0], speed: 30 },  // Instrumento 3
+    4: { color: [0.75, 0.4, 1.0, 1.0], speed: 110 },  // Instrumento 4
 };
 
 // Inimigos
@@ -39,7 +35,11 @@ export class Enemy extends Entity {
         this.hp = 1;
         this.speed = style.speed;
         this.instrument = instrument;
-        this.shape = style.shape;
+        // Direção que o bicho está "olhando" (radianos), usada para
+        // desenhá-lo virado pro sentido em que se move.
+        this.angle = 0;
+
+        this.animPhase = Math.random() * Math.PI * 2;
     }
 
     update(deltaTime, targetX, targetY) {
@@ -47,6 +47,10 @@ export class Enemy extends Entity {
         const dx = targetX - this.x;
         const dy = targetY - this.y;
         const distance = Math.hypot(dx, dy);
+
+        if (distance > 0.001) {
+            this.angle = Math.atan2(dy, dx);
+        }
 
         // Se estiver perto o suficiente da torre, ataca
         if (distance > 20) {

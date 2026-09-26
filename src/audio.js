@@ -1,9 +1,5 @@
 // Toca a música do nível e dispara um evento sempre que o tempo atual
 // da música cruza um instante marcado no beatmap (ver src/beatmaps/).
-//
-// Formato do beatmap: array de { time: segundos, instrument: 1..n },
-// gerado pelo Editor de Beatmap (marcando na mão os tempos em que cada
-// instrumento entra na música).
 
 import { registerAudio, unregisterAudio } from './audio-settings.js';
 
@@ -68,7 +64,7 @@ export class RhythmManager {
         this.audio.currentTime = 0;
     }
 
-    // Pausa a música sem resetar o tempo (diferente de stop()) — usado
+    // Pausa a música sem resetar o tempo, usado
     // pelo botão de Pause e ao minimizar/trocar de aba.
     pause() {
         if (!this.audio) return;
@@ -90,6 +86,13 @@ export class RhythmManager {
     // no beatmap. callback recebe o número do instrumento (1 a n).
     onInstrumentPlay(callback) {
         this.onInstrumentCallbacks.push(callback);
+    }
+
+    // Verdadeiro quando a música do nível chegou ao fim (usado para detectar a condição de vitória). 
+    // A propriedade nativa `ended` do <audio> fica true assim que a
+    // reprodução chega no final e volta a false quando a música é reiniciada.
+    isTrackEnded() {
+        return !!(this.audio && this.audio.ended);
     }
 
     // Chamado a cada frame do jogo. Usa o tempo real de reprodução do

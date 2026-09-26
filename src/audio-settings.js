@@ -1,11 +1,3 @@
-// Controle global de volume do site. Qualquer <audio> do jogo (música do
-// menu, música de nível, efeitos sonoros futuros, etc.) deve ser
-// registrado aqui com registerAudio() para ficar sincronizado com o
-// volume escolhido pelo jogador no botão da tela inicial.
-//
-// O valor escolhido é salvo no localStorage, então o volume é lembrado
-// entre uma visita e outra.
-
 const STORAGE_KEY = "utf-cg-tp1:volume";
 
 function loadStoredVolume() {
@@ -23,9 +15,7 @@ export function getVolume() {
     return currentVolume;
 }
 
-// Define um novo volume (0 a 1), aplica em todo áudio registrado,
-// salva no localStorage e avisa quem estiver ouvindo (ex: o ícone do
-// botão de volume).
+// Define o volume global (0 a 1) e atualiza todos os elementos de áudio
 export function setVolume(value) {
     currentVolume = Math.min(1, Math.max(0, value));
     localStorage.setItem(STORAGE_KEY, String(currentVolume));
@@ -35,8 +25,9 @@ export function setVolume(value) {
     listeners.forEach((callback) => callback(currentVolume));
 }
 
-// Registra um elemento de áudio (instância de Audio ou <audio>) para
-// que seu volume seja mantido em sincronia com o volume global.
+// Registra um elemento de áudio (HTMLAudioElement) para que ele seja
+// controlado pelo volume global do site. Retorna o mesmo elemento de áudio
+// para facilitar o encadeamento de chamadas.
 export function registerAudio(audio) {
     if (!audio) return audio;
     audio.volume = currentVolume;
@@ -44,7 +35,7 @@ export function registerAudio(audio) {
     return audio;
 }
 
-// Remove um áudio do controle global (ex: antes de trocar de faixa).
+// Remove um áudio do controle global.
 export function unregisterAudio(audio) {
     registeredAudios.delete(audio);
 }
