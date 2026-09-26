@@ -14,8 +14,8 @@ class Entity {
 export class Tower extends Entity {
     constructor(x, y) {
         super(x, y, 60, 60, [0.0, 0.8, 1.0, 1.0]); // Codigo cor azul 
-        this.hp = 100;
-        this.maxHp = 100;
+        this.hp = 1000;
+        this.maxHp = 1000;
     }
 }
 
